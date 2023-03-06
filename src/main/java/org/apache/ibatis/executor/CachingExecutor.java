@@ -38,10 +38,12 @@ import org.apache.ibatis.transaction.Transaction;
  */
 public class CachingExecutor implements Executor {
 
+  // xjh-装饰器模式，CachingExecutor作为二级缓存，二级缓存中数据不存在时，会将请求委派给delegate。使用此模式可以让CachingExecutor专注于二级缓存的实现
   private final Executor delegate;
   private final TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
+    // xjh-传入delegate，一般传入BaseExecutor
     this.delegate = delegate;
     delegate.setExecutorWrapper(this);
   }
@@ -85,6 +87,7 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameterObject);
+    // xjh-获取二级缓存key
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
@@ -93,14 +96,20 @@ public class CachingExecutor implements Executor {
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
     Cache cache = ms.getCache();
+    // xjh-如果设置中配了缓存则尝试使用二级缓存
     if (cache != null) {
+      // 根据设置判断是否清空缓存
       flushCacheIfRequired(ms);
+      // 是否允许使用缓存且不能进行返回数据的自定义处理
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
+        // 从二级缓存中取数据
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
+          // 二级缓存中没有数据，则将查询操作委派
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          // 将结果缓存
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;

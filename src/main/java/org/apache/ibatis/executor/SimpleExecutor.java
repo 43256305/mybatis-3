@@ -37,6 +37,7 @@ import org.apache.ibatis.transaction.Transaction;
 public class SimpleExecutor extends BaseExecutor {
 
   public SimpleExecutor(Configuration configuration, Transaction transaction) {
+    // xjh-调用父类BaseExecutor的构造器
     super(configuration, transaction);
   }
 

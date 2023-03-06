@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+       Copyright 2009-2016 the original author or authors.
+
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
+
+-->
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.study.Mapper">
+
+  <cache/>
+
+<!--
+使用二级缓存需要完成下面三步配置：
+1.mybatis-config.xml中setting开启缓存：<setting name = "cacheEnabled" value = "true" />
+2.mapper文件中使用<cache/>
+3.相关的查询语句使用useCache="true"
+另外，实体类还需要实现序列化接口
+-->
+  <select id="getUsersXml" resultType="com.example.study.User" useCache="true">
+    select * from users
+  </select>
+
+</mapper>
