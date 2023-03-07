@@ -15,6 +15,7 @@
  */
 package com.example.study;
 
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -34,4 +35,14 @@ public interface Mapper {
 
   @Update("update users set name = #{name} where id = #{id}")
   void updateNameById(@Param("name") String name, @Param("id") Integer id);
+
+  @Select("select * from users where id = #{id}")
+  User getUserById(@Param("id") Integer id);
+
+  @Select("select * from users where id = #{id}")
+  User getUserByIdTest(@Param("id") Integer id);
+
+  @Select("select * from users where id = #{id}")
+  @Options(flushCache = Options.FlushCachePolicy.TRUE)
+  User getUserByIdOption(@Param("id") Integer id);
 }

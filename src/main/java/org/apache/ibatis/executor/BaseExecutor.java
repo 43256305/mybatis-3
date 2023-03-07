@@ -55,6 +55,7 @@ public abstract class BaseExecutor implements Executor {
   protected Executor wrapper;
 
   protected ConcurrentLinkedQueue<DeferredLoad> deferredLoads;
+  // xjh-一级缓存
   protected PerpetualCache localCache;
   protected PerpetualCache localOutputParameterCache;
   protected Configuration configuration;
@@ -113,6 +114,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    // xjh-只要是更新，就会清空一级缓存
     clearLocalCache();
     return doUpdate(ms, parameter);
   }
@@ -133,6 +135,7 @@ public abstract class BaseExecutor implements Executor {
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameter);
     // xjh-创建缓存key
+    // key的组成：statementId（如com.example.study.Mapper.getUserById）、rowBounds、sql statement、parameter、env（如dev、pro）
     CacheKey key = createCacheKey(ms, parameter, rowBounds, boundSql);
     return query(ms, parameter, rowBounds, resultHandler, key, boundSql);
   }
@@ -144,7 +147,9 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Executor was closed.");
     }
+    // queryStack用于实现嵌套查询，如果有子查询，则queryStack会大于1
     if (queryStack == 0 && ms.isFlushCacheRequired()) {
+      // 设置了Options.FlushCachePolicy.TRUE则会清空缓存
       clearLocalCache();
     }
     List<E> list;
@@ -168,6 +173,7 @@ public abstract class BaseExecutor implements Executor {
       }
       // issue #601
       deferredLoads.clear();
+      // 设置了LocalCacheScope.STATEMENT，也会在queryStack == 0时清空缓存，所以子查询中是可以命中缓存的
       if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
         // issue #482
         clearLocalCache();
@@ -242,6 +248,7 @@ public abstract class BaseExecutor implements Executor {
     if (closed) {
       throw new ExecutorException("Cannot commit, transaction is already closed");
     }
+    // xjh-可以看到，这里commit清空了缓存
     clearLocalCache();
     flushStatements();
     if (required) {
@@ -253,6 +260,7 @@ public abstract class BaseExecutor implements Executor {
   public void rollback(boolean required) throws SQLException {
     if (!closed) {
       try {
+        // xjh-同样，rollback清空了缓存
         clearLocalCache();
         flushStatements(true);
       } finally {

@@ -24,6 +24,10 @@
 
   <settings>
     <setting name = "cacheEnabled" value = "true" />
+    <!-- 打印sql日志 -->
+    <setting name="logImpl" value="org.apache.ibatis.logging.stdout.StdOutImpl" />
+<!--    加了下面的语句后，将缓存的作用于设置为STATEMENT，这样一级缓存相当于不生效（但是在嵌套查询中，还是会使用一级缓存）-->
+<!--    <setting name="localCacheScope" value="STATEMENT"/>-->
   </settings>
 
     <environments default="development">

@@ -32,7 +32,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ArrayResultTypeTest {
+class ExecutorTest {
 
   private static SqlSessionFactory sqlSessionFactory;
 
@@ -51,7 +51,7 @@ class ArrayResultTypeTest {
       sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
     }
 
-    // populate in-memory database
+    // populate database
     BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
       "com/example/study/CreateDB.sql");
 
@@ -77,14 +77,14 @@ class ArrayResultTypeTest {
     SimpleExecutor executor = new SimpleExecutor(configuration, jdbcTransaction);
     MappedStatement mappedStatement = configuration.getMappedStatement("com.example.study.Mapper.getUsers");
     List<Object> objects = executor.doQuery(mappedStatement, null, RowBounds.DEFAULT, SimpleExecutor.NO_RESULT_HANDLER, mappedStatement.getBoundSql(null));
-    // 简单执行器：无论SQL是否一致，每次都会进行预编译
+    // 简单执行器：无论SQL是否一致，每次都会进行预编译（即这里会打印两次select * from users）
     executor.doQuery(mappedStatement, null, RowBounds.DEFAULT, SimpleExecutor.NO_RESULT_HANDLER, mappedStatement.getBoundSql(null));
     System.out.println(objects);
   }
 
   @Test
   void reuseExecutorTest() throws Exception{
-    // 可重用执行器，SQL相同时只会进行一次预编译
+    // 可重用执行器，SQL相同时只会进行一次预编译（只打印一次select * from users，打印了两次parameter）
     ReuseExecutor executor = new ReuseExecutor(configuration, jdbcTransaction);
     MappedStatement mappedStatement = configuration.getMappedStatement("com.example.study.Mapper.getUsers");
     List<Object> objects = executor.doQuery(mappedStatement, null, RowBounds.DEFAULT, SimpleExecutor.NO_RESULT_HANDLER, mappedStatement.getBoundSql(null));
@@ -103,7 +103,7 @@ class ArrayResultTypeTest {
     executor.doUpdate(mappedStatement, map);
     map.put("id", 2);
     executor.doUpdate(mappedStatement, map);
-    // 使用BatchExecutor时必须使用flush语句，上面的doUpdate只是设置参数的操作，并没有真正地执行
+    // 使用BatchExecutor时必须使用flush语句，上面的doUpdate只是设置参数的操作，并没有真正地执行。使用BatchExecutor时会自动关闭autocommit。
     executor.doFlushStatements(true);
   }
 
