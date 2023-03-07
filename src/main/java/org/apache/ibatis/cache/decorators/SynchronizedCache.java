@@ -22,6 +22,7 @@ import org.apache.ibatis.cache.Cache;
  */
 public class SynchronizedCache implements Cache {
 
+  // xjh-责任链模式的实现，当前缓存只是加了一个synchronized保证了线程安全，后面的处理还是要交给delegate处理。
   private final Cache delegate;
 
   public SynchronizedCache(Cache delegate) {

@@ -26,6 +26,7 @@ import org.apache.ibatis.util.MapUtil;
  */
 public class TransactionalCacheManager {
 
+  // xjh-key：缓存空间。value：暂存区（暂存区包裹了缓存区）
   private final Map<Cache, TransactionalCache> transactionalCaches = new HashMap<>();
 
   public void clear(Cache cache) {
@@ -33,10 +34,12 @@ public class TransactionalCacheManager {
   }
 
   public Object getObject(Cache cache, CacheKey key) {
+    // xjh-先通过cache获取transactionalCaches中此cache（缓存空间）对应的TransactionalCache，再根据key来获取TransactionalCache（从此Cache中的缓存区取）中的value
     return getTransactionalCache(cache).getObject(key);
   }
 
   public void putObject(Cache cache, CacheKey key, Object value) {
+    // xjh-根据cache获取此缓存空间对应TransactionalCache，再putObject
     getTransactionalCache(cache).putObject(key, value);
   }
 

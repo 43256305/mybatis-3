@@ -138,6 +138,7 @@ class ExecutorTest {
   void sessionTest(){
     // debug时查看sqlSession结构可以发现：sqlSession默认使用DefaultSqlSession，他又包含了一个CachingExecutor，而CachingExecutor又包含了SimpleExecutor（父类为BaseExecutor）
     // sqlSession使用的是门面模式，提供一些增删改查的基本api和一些提交关闭会话等操作，内部的真实增删改查操作都是委派给了Executor实现
+    // Executor则提供了改、查、缓存维护、事务管理、提交关闭执行器、批处理刷新等功能。
     List<Object> objects = sqlSession.selectList("com.example.study.Mapper.getUsersXml", null);
     System.out.println(objects);
 

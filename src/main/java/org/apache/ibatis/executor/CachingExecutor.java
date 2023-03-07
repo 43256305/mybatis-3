@@ -40,6 +40,8 @@ public class CachingExecutor implements Executor {
 
   // xjh-装饰器模式，CachingExecutor作为二级缓存，二级缓存中数据不存在时，会将请求委派给delegate。使用此模式可以让CachingExecutor专注于二级缓存的实现
   private final Executor delegate;
+
+  // xjh-一个CachingExecutor对应一个TransactionalCacheManager（缓存管理器）
   private final TransactionalCacheManager tcm = new TransactionalCacheManager();
 
   public CachingExecutor(Executor delegate) {
@@ -74,6 +76,7 @@ public class CachingExecutor implements Executor {
 
   @Override
   public int update(MappedStatement ms, Object parameterObject) throws SQLException {
+    // xjh-增删改都会掉这个update方法
     flushCacheIfRequired(ms);
     return delegate.update(ms, parameterObject);
   }
@@ -95,21 +98,22 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
+    // 获取ms中的cache，每一个MappedStatement都保存了一个cache。
     Cache cache = ms.getCache();
     // xjh-如果设置中配了缓存则尝试使用二级缓存
     if (cache != null) {
-      // 根据设置判断是否清空缓存
+      // 根据设置判断是否清空暂存区
       flushCacheIfRequired(ms);
       // 是否允许使用缓存且不能进行返回数据的自定义处理
       if (ms.isUseCache() && resultHandler == null) {
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
-        // 从二级缓存中取数据
+        // 从二级缓存缓存区中取数据，因为tcm中包含了很多缓存空间，所以我们需要传递cache来区分哪个缓存空间
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
           // 二级缓存中没有数据，则将查询操作委派
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
-          // 将结果缓存
+          // 将结果缓存到二级缓存的暂存区
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
@@ -172,6 +176,8 @@ public class CachingExecutor implements Executor {
 
   private void flushCacheIfRequired(MappedStatement ms) {
     Cache cache = ms.getCache();
+    // xjh-只有开启了二级缓存，且flushCacheRequired为true才会清空暂存区。
+    // 所以我们可以将flushCacheRequired配置为false来阻止每次修改都清空暂存区。
     if (cache != null && ms.isFlushCacheRequired()) {
       tcm.clear(cache);
     }
