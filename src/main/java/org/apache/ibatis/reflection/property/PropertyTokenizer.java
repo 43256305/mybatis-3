@@ -21,9 +21,15 @@ import java.util.Iterator;
  * @author Clinton Begin
  */
 public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
+
+  // 假设传入的完整name为：associationAuthor[0].id
+  // xjh-associationAuthor
   private String name;
+  // xjh-associationAuthor[0]
   private final String indexedName;
+  // xjh-0
   private String index;
+  // xjh-id
   private final String children;
 
   public PropertyTokenizer(String fullname) {
@@ -66,6 +72,7 @@ public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
 
   @Override
   public PropertyTokenizer next() {
+    // xjh-next方法，将children也进行分词
     return new PropertyTokenizer(children);
   }
 

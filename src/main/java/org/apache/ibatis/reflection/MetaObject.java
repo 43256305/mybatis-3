@@ -110,15 +110,19 @@ public class MetaObject {
   }
 
   public Object getValue(String name) {
+    // xjh-生成属性分词器，能够按指定规则分割我们传入的name
     PropertyTokenizer prop = new PropertyTokenizer(name);
     if (prop.hasNext()) {
+      // 取出indexName的value，并将value也包装成metaObject
       MetaObject metaValue = metaObjectForProperty(prop.getIndexedName());
       if (metaValue == SystemMetaObject.NULL_META_OBJECT) {
         return null;
       } else {
+        // 给indexName的value包装的metaValue获取子属性
         return metaValue.getValue(prop.getChildren());
       }
     } else {
+      // 没有子属性则通过反射直接获取到值，比如name为associationAuthor[0]时，就能获取到下标为0的user
       return objectWrapper.get(prop);
     }
   }
@@ -142,7 +146,9 @@ public class MetaObject {
   }
 
   public MetaObject metaObjectForProperty(String name) {
+    // xjh-再一次调用MetaObject.getValue()方法，获取indexName的value
     Object value = getValue(name);
+    // 把indexName的value包装成MetaObject并返回
     return MetaObject.forObject(value, objectFactory, objectWrapperFactory, reflectorFactory);
   }
 

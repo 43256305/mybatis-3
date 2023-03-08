@@ -161,6 +161,7 @@ public class MetaClass {
   }
 
   public Invoker getGetInvoker(String name) {
+    // xjh-通过反射获取值
     return reflector.getGetInvoker(name);
   }
 
