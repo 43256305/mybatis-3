@@ -41,6 +41,7 @@ public class DefaultParameterHandler implements ParameterHandler {
   private final TypeHandlerRegistry typeHandlerRegistry;
 
   private final MappedStatement mappedStatement;
+  // xjh-用户传递的经过解析的参数，如arg、param等。详情查看ParamNameResolver.getNamedParams()
   private final Object parameterObject;
   private final BoundSql boundSql;
   private final Configuration configuration;
@@ -61,29 +62,37 @@ public class DefaultParameterHandler implements ParameterHandler {
   @Override
   public void setParameters(PreparedStatement ps) {
     ErrorContext.instance().activity("setting parameters").object(mappedStatement.getParameterMap().getId());
+    // xjh-boundSql中包含了原始的sql，parameterMappings：要映射的参数（即sql中#{}/${}中指定参数的集合）
+    // parameterObject：用户传递的经过解析的参数
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     if (parameterMappings != null) {
       for (int i = 0; i < parameterMappings.size(); i++) {
         ParameterMapping parameterMapping = parameterMappings.get(i);
         if (parameterMapping.getMode() != ParameterMode.OUT) {
           Object value;
+          // propertyName为sql中想要的参数名字
           String propertyName = parameterMapping.getProperty();
           if (boundSql.hasAdditionalParameter(propertyName)) { // issue #448 ask first for additional params
             value = boundSql.getAdditionalParameter(propertyName);
-          } else if (parameterObject == null) {
+          } else if (parameterObject == null) {  // 传入的参数为空
             value = null;
-          } else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {
+          } else if (typeHandlerRegistry.hasTypeHandler(parameterObject.getClass())) {  // 传入一个非@Param值
             value = parameterObject;
-          } else {
+          } else {  // 传入@Param或者多个值
+            // 将传入的参数封装成metaObject
             MetaObject metaObject = configuration.newMetaObject(parameterObject);
+            // metaObject根据传入的参数（parameterObject）与sql想要的参数（propertyName）匹配，并返回value，这个value就是匹配到的sql想要的用户传入的值。
+            // 如果参数为复杂对象类型，我们可以使用如user.id作为propertyName来访问user中的id属性
             value = metaObject.getValue(propertyName);
           }
+          // 根据参数类型获取typeHandler，一般为UnknownTypeHandler
           TypeHandler typeHandler = parameterMapping.getTypeHandler();
           JdbcType jdbcType = parameterMapping.getJdbcType();
           if (value == null && jdbcType == null) {
             jdbcType = configuration.getJdbcTypeForNull();
           }
           try {
+            // typeHandler给ps设置参数value
             typeHandler.setParameter(ps, i + 1, value, jdbcType);
           } catch (TypeException | SQLException e) {
             throw new TypeException("Could not set parameters for mapping: " + parameterMapping + ". Cause: " + e, e);

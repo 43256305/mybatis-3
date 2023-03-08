@@ -49,6 +49,9 @@ public class ParamNameResolver {
    * <li>aMethod(int a, int b) -&gt; {{0, "0"}, {1, "1"}}</li>
    * <li>aMethod(int a, RowBounds rb, int b) -&gt; {{0, "0"}, {2, "1"}}</li>
    * </ul>
+   * xjh-使用了@Param注解时，key为参数顺序，value为@Param注解值
+   * 没有使用注解时，key为参数顺序，value为arg+参数顺序（如arg0，arg1），参数中含有RowBounds、ResultHandler时，并不会作为参数出现，但是下标也要相应加1
+   * 如果传入的是对象，则对象与普通参数一样解析，比如传入User，则User也会变成某个param，我们可以通过paramN.id来访问对象中的id属性。对象同样可以使用@Param注解，如果没有使用，则也可以使用argN.id引用id。
    */
   private final SortedMap<Integer, String> names;
 
@@ -121,24 +124,32 @@ public class ParamNameResolver {
    */
   public Object getNamedParams(Object[] args) {
     final int paramCount = names.size();
+    // xjh-如果没有参数，直接返回null
     if (args == null || paramCount == 0) {
       return null;
     } else if (!hasParamAnnotation && paramCount == 1) {
+      // 如果参数只有一个且没有@Param注解
       Object value = args[names.firstKey()];
       return wrapToMapIfCollection(value, useActualParamName ? names.get(0) : null);
     } else {
+      // 否则返回一个map（即有@Param注解或者多个参数都会到达这里）
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
+        // key：names的value（注解了@Param时为注解中的值，没有此参数时为参数顺序），value：参数值
         param.put(entry.getValue(), args[entry.getKey()]);
         // add generic param names (param1, param2, ...)
+        // 将param1、param2等这类参数放入param，key：paramN，value：参数值。注意，param从1开始，而arg从0开始
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
         // ensure not to overwrite parameter named with @Param
+        // 只有@Param注解值为param1这种类型，才不需要将param1这种参数放置到map中
         if (!names.containsValue(genericParamName)) {
           param.put(genericParamName, args[entry.getKey()]);
         }
         i++;
       }
+      // 所以，就算只有一个@Param参数，最后这个map中也会有两个key-value。
+      // 所以，使用@Param注解时，我们可以使用参数名、paramN引用，不使用@Param时，我们可以使用argN、ParamN引用。另外arg从0开始，Param从1开始
       return param;
     }
   }

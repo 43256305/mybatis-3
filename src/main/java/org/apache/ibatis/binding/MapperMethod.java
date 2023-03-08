@@ -83,7 +83,9 @@ public class MapperMethod {
         } else if (method.returnsCursor()) {
           result = executeForCursor(sqlSession, args);
         } else {
+          // xjh-转换参数
           Object param = method.convertArgsToSqlCommandParam(args);
+          // 调用sqlSession.selectOne
           result = sqlSession.selectOne(command.getName(), param);
           if (method.returnsOptional()
               && (result == null || !method.getReturnType().equals(result.getClass()))) {

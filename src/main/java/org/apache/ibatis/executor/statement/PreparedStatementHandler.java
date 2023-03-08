@@ -61,7 +61,9 @@ public class PreparedStatementHandler extends BaseStatementHandler {
   @Override
   public <E> List<E> query(Statement statement, ResultHandler resultHandler) throws SQLException {
     PreparedStatement ps = (PreparedStatement) statement;
+    // xjh-执行sql，调用jdbc接口
     ps.execute();
+    // 处理返回结果
     return resultSetHandler.handleResultSets(ps);
   }
 
@@ -91,6 +93,7 @@ public class PreparedStatementHandler extends BaseStatementHandler {
 
   @Override
   public void parameterize(Statement statement) throws SQLException {
+    // xjh-ParameterHandler只有一个实现类，DefaultParameterHandler
     parameterHandler.setParameters((PreparedStatement) statement);
   }
 

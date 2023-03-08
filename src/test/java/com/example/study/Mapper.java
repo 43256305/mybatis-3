@@ -19,6 +19,7 @@ import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.session.RowBounds;
 
 public interface Mapper {
 
@@ -45,4 +46,8 @@ public interface Mapper {
   @Select("select * from users where id = #{id}")
   @Options(flushCache = Options.FlushCachePolicy.TRUE)
   User getUserByIdOption(@Param("id") Integer id);
+
+  @Select("select * from users where id = #{id} and name = #{name}")
+//  @Select("select * from users where id = #{param1} and name = #{param2}")
+  User getByNameId(@Param("id") Integer id, @Param("name") String name, RowBounds rowBounds, @Param("user") User user);
 }
