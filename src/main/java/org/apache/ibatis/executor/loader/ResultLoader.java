@@ -78,6 +78,7 @@ public class ResultLoader {
       localExecutor = newExecutor();
     }
     try {
+      // xjh-使用executor对子查询执行query操作
       return localExecutor.query(mappedStatement, parameterObject, RowBounds.DEFAULT, Executor.NO_RESULT_HANDLER, cacheKey, boundSql);
     } finally {
       if (localExecutor != executor) {

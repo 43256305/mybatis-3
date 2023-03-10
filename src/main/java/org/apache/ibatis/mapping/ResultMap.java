@@ -33,21 +33,29 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * xjh-一个ResultMap对应了我们声明的一个resultMap标签
  */
 public class ResultMap {
   private Configuration configuration;
 
   private String id;
   private Class<?> type;
+  // xjh-resultMap标签中声明的result标签对应关系list
   private List<ResultMapping> resultMappings;
+  // xjh-resultMap标签中声明的id标签对应关系list
   private List<ResultMapping> idResultMappings;
+  // constructor标签
   private List<ResultMapping> constructorResultMappings;
   private List<ResultMapping> propertyResultMappings;
+  // 需要mapped的数据列集合
   private Set<String> mappedColumns;
+  // 需要mapped的bean属性集合
   private Set<String> mappedProperties;
   private Discriminator discriminator;
   private boolean hasNestedResultMaps;
+  // 是否有子查询
   private boolean hasNestedQueries;
+  // 是否autoMapping
   private Boolean autoMapping;
 
   private ResultMap() {

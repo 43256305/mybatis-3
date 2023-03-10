@@ -21,6 +21,8 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.session.RowBounds;
 
+import java.util.List;
+
 public interface Mapper {
 
   @Select("select * from users")
@@ -50,4 +52,10 @@ public interface Mapper {
   @Select("select * from users where id = #{id} and name = #{name}")
 //  @Select("select * from users where id = #{param1} and name = #{param2}")
   User getByNameId(@Param("id") Integer id, @Param("name") String name, RowBounds rowBounds, @Param("user") User user);
+
+  List<Comment> getCommentByBlogId(@Param("id") Integer id);
+
+  Blog getBlogById(@Param("id") Integer id);
+
+  Blog getLazyBlogById(@Param("id") Integer id);
 }

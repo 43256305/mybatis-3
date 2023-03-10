@@ -108,11 +108,14 @@ public class TypeAliasRegistry {
         return null;
       }
       // issue #748
+      // xjh-转换为小写
       String key = string.toLowerCase(Locale.ENGLISH);
       Class<T> value;
       if (typeAliases.containsKey(key)) {
+        // 直接将传入的值作为key，取出typeAliases这个map中的value
         value = (Class<T>) typeAliases.get(key);
-      } else {
+      } else {  //map中不包含此key
+        // 将此key作为全类名加载
         value = (Class<T>) Resources.classForName(string);
       }
       return value;

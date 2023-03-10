@@ -35,4 +35,51 @@
     select * from users
   </select>
 
+<!--  上面getUsersXml使用的resultType其实内部也会转换成resultMap-->
+
+<!--
+resultMap标签包含一下标签：constructor,id,result,association,collection
+ResultMap与resultMap标签为一对一关系，ResultMap与ResultMapping是一对多关系
+自动映射生效条件：列名与属性名同时存在，当前列未设置手动映射，属性类别存在TypeHandler（即一些简单类型），开启autoMapping(默认自动开启)。
+实际使用尽量不要使用自动映射。
+-->
+  <resultMap id="blogMap" type="com.example.study.Blog">
+<!--    注意，这里需要手动指定id的映射规则，要不然自动映射不会生效，因为在下面的collection标签中我们使用了column="id"，此时mybatis认为collection标签就是id的映射关系，所以会导致id为空-->
+    <id property="id" column="id"/>
+<!--    result标签中的jdbcType，javaType等mybatis能自动推导，不用填写-->
+    <result property="title" column="title"/>
+<!--    包含单个复杂对象  property为bean属性名  column为当前表要传入getUserById方法的数据库字段-->
+    <association property="mainAuthor" column="main_author_id" select="com.example.study.Mapper.getUserById" />
+<!--    包含list的复杂对象-->
+    <collection property="commentList" column="id" select="com.example.study.Mapper.getCommentByBlogId"/>
+  </resultMap>
+
+  <resultMap id="commentMap" type="com.example.study.Comment" autoMapping="true">
+    <result property="blogId" column="blog_id"/>
+<!--    这里评论关联的用户如果是博客的mainAuthor，则这里会使用缓存-->
+    <association property="user" column="user_id" select="com.example.study.Mapper.getUserById" />
+<!--    这里存在blog与comment嵌套循环依赖，注意comment中不能使用toString输出blog，要不然会报错，必须通过debug手动查看关联关系。这里同样会使用缓存。-->
+    <association property="blog" column="blog_id" select="com.example.study.Mapper.getBlogById" />
+  </resultMap>
+
+  <select id="getBlogById" resultMap="blogMap">
+    select * from blog where id = #{id}
+  </select>
+
+  <select id="getCommentByBlogId" resultMap="commentMap">
+    select * from comment where blog_id = #{id}
+  </select>
+
+  <resultMap id="lazyBlogMap" type="com.example.study.Blog">
+    <id property="id" column="id"/>
+    <result property="title" column="title"/>
+<!--    只有子查询才能使用懒加载-->
+    <association property="mainAuthor" column="main_author_id" select="com.example.study.Mapper.getUserById" fetchType="lazy"/>
+    <collection property="commentList" column="id" select="com.example.study.Mapper.getCommentByBlogId" fetchType="lazy"/>
+  </resultMap>
+
+  <select id="getLazyBlogById" resultMap="lazyBlogMap">
+    select * from blog where id = #{id}
+  </select>
+
 </mapper>

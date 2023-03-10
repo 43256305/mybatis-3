@@ -15,5 +15,6 @@
  */
 /**
  * Parses XML files to create a Configuration.
+ * xjh-通过xml文件解析成一个configuration
  */
 package org.apache.ibatis.builder.xml;

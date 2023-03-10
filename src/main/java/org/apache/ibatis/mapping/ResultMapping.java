@@ -27,16 +27,20 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
  * @author Clinton Begin
+ * xjh-一个ResultMapping对应了resultMap标签中的一个如id、result、association等子标签
  */
 public class ResultMapping {
 
   private Configuration configuration;
+  // xjh-bean属性
   private String property;
+  // xjh-数据列
   private String column;
   private Class<?> javaType;
   private JdbcType jdbcType;
   private TypeHandler<?> typeHandler;
   private String nestedResultMapId;
+  // xjh-子查询的查询id，如com.example.study.Mapper.getCommentByBlogId
   private String nestedQueryId;
   private Set<String> notNullColumns;
   private String columnPrefix;

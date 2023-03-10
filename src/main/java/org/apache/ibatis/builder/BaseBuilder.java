@@ -146,6 +146,7 @@ public abstract class BaseBuilder {
   }
 
   protected <T> Class<? extends T> resolveAlias(String alias) {
+    // xjh-typeAliasRegistry中保存了一个Map，对应了所有alias与全类名的对应关系，比如我们可以使用hashmap作为class java.util.HashMap的key
     return typeAliasRegistry.resolveAlias(alias);
   }
 }

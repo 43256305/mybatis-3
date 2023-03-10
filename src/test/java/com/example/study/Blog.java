@@ -15,7 +15,7 @@ public class Blog implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private int id;
+  private Integer id;
 
   private String publishDate;
 
@@ -29,11 +29,21 @@ public class Blog implements Serializable {
 
   private Map<String, String> label;
 
-  public int getId() {
+  private List<Comment> commentList;
+
+  public List<Comment> getCommentList() {
+    return commentList;
+  }
+
+  public void setCommentList(List<Comment> commentList) {
+    this.commentList = commentList;
+  }
+
+  public Integer getId() {
     return id;
   }
 
-  public void setId(int id) {
+  public void setId(Integer id) {
     this.id = id;
   }
 
@@ -95,6 +105,7 @@ public class Blog implements Serializable {
       ", body='" + body + '\'' +
       ", associationAuthor=" + associationAuthor +
       ", label=" + label +
+      ", commentList=" + commentList +
       '}';
   }
 }

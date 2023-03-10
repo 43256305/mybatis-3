@@ -156,6 +156,7 @@ public class Configuration {
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
+  // xjh-以id:ResultMap的形式保存了所有解析的ResultMap，id为resultMap标签的id。id统一有两个，一个是我们指定的id，一个是全限定名，如com.example.study.Mapper.blogMap。指向的ResultMap都是同一个
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");

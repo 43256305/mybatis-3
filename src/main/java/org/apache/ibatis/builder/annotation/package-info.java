@@ -15,5 +15,6 @@
  */
 /**
  * Parses annotions to create a Configuration.
+ * xjh-通过annotation解析成一个configuration
  */
 package org.apache.ibatis.builder.annotation;

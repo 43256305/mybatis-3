@@ -424,7 +424,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         // 自动映射填充属性
         foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
       }
-      // 手动映射填充属性（可能包含嵌套子查询）
+      // 手动映射填充属性（可能包含嵌套子查询），如果开启了自动填充，则会先手动填充，再自动填充
       foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, columnPrefix) || foundValues;
       foundValues = lazyLoader.size() > 0 || foundValues;
       rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
@@ -491,9 +491,12 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       throws SQLException {
     final List<String> mappedColumnNames = rsw.getMappedColumnNames(resultMap, columnPrefix);
     boolean foundValues = false;
+    // xjh-ResultMap与ResultMapping是一对多的关系，所以可以获取到一个list
     final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
+    // 遍历resultMap子标签
     for (ResultMapping propertyMapping : propertyMappings) {
       String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
+      // 如果子查询不为空
       if (propertyMapping.getNestedResultMapId() != null) {
         // the user added a column attribute to a nested result map, ignore it
         column = null;
@@ -501,6 +504,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       if (propertyMapping.isCompositeResult()
           || (column != null && mappedColumnNames.contains(column.toUpperCase(Locale.ENGLISH)))
           || propertyMapping.getResultSet() != null) {
+        // 获取数据库中当前property对应的column的value值，如果有嵌套子查询，则此时value为子查询出的对象。
         Object value = getPropertyMappingValue(rsw.getResultSet(), metaObject, propertyMapping, lazyLoader, columnPrefix);
         // issue #541 make property optional
         final String property = propertyMapping.getProperty();
@@ -515,6 +519,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
         if (value != null || (configuration.isCallSettersOnNulls() && !metaObject.getSetterType(property).isPrimitive())) {
           // gcode issue #377, call setter on nulls (value is not 'found')
+          // 将获取到的value填充到property属性上，metaObject为一条已经经过了autoMapping的目标对象。
           metaObject.setValue(property, value);
         }
       }
@@ -524,12 +529,14 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private Object getPropertyMappingValue(ResultSet rs, MetaObject metaResultObject, ResultMapping propertyMapping, ResultLoaderMap lazyLoader, String columnPrefix)
       throws SQLException {
+    // xjh-如果有子查询
     if (propertyMapping.getNestedQueryId() != null) {
       return getNestedQueryMappingValue(rs, metaResultObject, propertyMapping, lazyLoader, columnPrefix);
     } else if (propertyMapping.getResultSet() != null) {
       addPendingChildRelation(rs, metaResultObject, propertyMapping);   // TODO is that OK?
       return DEFERRED;
     } else {
+      // 没有子查询，直接使用typeHandler获取值
       final TypeHandler<?> typeHandler = propertyMapping.getTypeHandler();
       final String column = prependPrefix(propertyMapping.getColumn(), columnPrefix);
       return typeHandler.getResult(rs, column);
@@ -538,49 +545,60 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private List<UnMappedColumnAutoMapping> createAutomaticMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, String columnPrefix) throws SQLException {
     final String mapKey = resultMap.getId() + ":" + columnPrefix;
+    // xjh-如果有缓存则直接获取缓存
     List<UnMappedColumnAutoMapping> autoMapping = autoMappingsCache.get(mapKey);
     if (autoMapping == null) {
       autoMapping = new ArrayList<>();
+      // 获取resultMap中没有设置映射的column list
       final List<String> unmappedColumnNames = rsw.getUnmappedColumnNames(resultMap, columnPrefix);
       for (String columnName : unmappedColumnNames) {
         String propertyName = columnName;
         if (columnPrefix != null && !columnPrefix.isEmpty()) {
           // When columnPrefix is specified,
           // ignore columns without the prefix.
+          // 这里columnPrefix一般为空，所以最后propertyName就是columnName
           if (columnName.toUpperCase(Locale.ENGLISH).startsWith(columnPrefix)) {
             propertyName = columnName.substring(columnPrefix.length());
           } else {
             continue;
           }
         }
+        // 根据columnName获取property。还要从configuration中判断是否允许驼峰命名映射。
         final String property = metaObject.findProperty(propertyName, configuration.isMapUnderscoreToCamelCase());
         if (property != null && metaObject.hasSetter(property)) {
+          // 如果resultMap中定义了此property的映射，则continue
           if (resultMap.getMappedProperties().contains(property)) {
             continue;
           }
           final Class<?> propertyType = metaObject.getSetterType(property);
           if (typeHandlerRegistry.hasTypeHandler(propertyType, rsw.getJdbcType(columnName))) {
+            // 根据属性的setter方法推断typeHandler
             final TypeHandler<?> typeHandler = rsw.getTypeHandler(propertyType, columnName);
+            // 将column、property、typeHandler等封装成UnMappedColumnAutoMapping
             autoMapping.add(new UnMappedColumnAutoMapping(columnName, property, typeHandler, propertyType.isPrimitive()));
           } else {
             configuration.getAutoMappingUnknownColumnBehavior()
                 .doAction(mappedStatement, columnName, property, propertyType);
           }
         } else {
+          // 如果根据columnName获取的property为空或者此property没有setter方法，则使用configuration中设置的UnknownColumnBehavior，默认什么都不做，可以设置告警或者失败
           configuration.getAutoMappingUnknownColumnBehavior()
               .doAction(mappedStatement, columnName, (property != null) ? property : propertyName, null);
         }
       }
+      // 将autoMapping放到缓存中
       autoMappingsCache.put(mapKey, autoMapping);
     }
     return autoMapping;
   }
 
   private boolean applyAutomaticMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, String columnPrefix) throws SQLException {
+    // xjh-创建某个类中所有需要autoMapping的属性列表。UnMappedColumnAutoMapping就是property与column的对应关系
     List<UnMappedColumnAutoMapping> autoMapping = createAutomaticMappings(rsw, resultMap, metaObject, columnPrefix);
     boolean foundValues = false;
     if (!autoMapping.isEmpty()) {
       for (UnMappedColumnAutoMapping mapping : autoMapping) {
+        // 直接获取column的value，由于自动映射只能应用到简单对象，所以这里直接获取
         final Object value = mapping.typeHandler.getResult(rsw.getResultSet(), mapping.column);
         if (value != null) {
           foundValues = true;
@@ -655,8 +673,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
     Object resultObject = createResultObject(rsw, resultMap, constructorArgTypes, constructorArgs, columnPrefix);
     if (resultObject != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
       final List<ResultMapping> propertyMappings = resultMap.getPropertyResultMappings();
+      // 遍历propertyMappings查看有哪个属性使用了懒加载
       for (ResultMapping propertyMapping : propertyMappings) {
         // issue gcode #109 && issue #149
+        // 如果懒加载，则创建代理对象，将resultObject换成代理对象并退出。 条件：子查询且开启了懒加载
         if (propertyMapping.getNestedQueryId() != null && propertyMapping.isLazy()) {
           resultObject = configuration.getProxyFactory().createProxy(resultObject, lazyLoader, configuration, objectFactory, constructorArgTypes, constructorArgs);
           break;
@@ -804,23 +824,32 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       throws SQLException {
     final String nestedQueryId = propertyMapping.getNestedQueryId();
     final String property = propertyMapping.getProperty();
+    // xjh-根据nestedQueryId获取MappedStatement
     final MappedStatement nestedQuery = configuration.getMappedStatement(nestedQueryId);
     final Class<?> nestedQueryParameterType = nestedQuery.getParameterMap().getType();
+    // 获取子查询参数
     final Object nestedQueryParameterObject = prepareParameterForNestedQuery(rs, propertyMapping, nestedQueryParameterType, columnPrefix);
     Object value = null;
     if (nestedQueryParameterObject != null) {
       final BoundSql nestedBoundSql = nestedQuery.getBoundSql(nestedQueryParameterObject);
+      // 创建缓存key
       final CacheKey key = executor.createCacheKey(nestedQuery, nestedQueryParameterObject, RowBounds.DEFAULT, nestedBoundSql);
       final Class<?> targetType = propertyMapping.getJavaType();
-      if (executor.isCached(nestedQuery, key)) {
+      if (executor.isCached(nestedQuery, key)) { // 查看是否命中缓存
+        // 命中缓存则延迟加载 查看实现类BaseExecutor 延迟加载主要是为了解决循环依赖问题
+        // 延迟加载：有循环依赖时，先将子查询对象加入到deferredLoads中，后面再统一为子查询对象填充依赖的父查询对象。没有循环依赖时，直接从缓存中加载并填充属性。
+        // 能进入到这里，一般都是存在循环依赖，且在处理子查询的属性填充阶段。
+        // 我们可以看到，这里解决循环依赖借用了一级缓存，所以一级缓存永远不能关闭，所以在子查询时如果可以用一定会用到缓存。
         executor.deferLoad(nestedQuery, metaResultObject, property, key, targetType);
         value = DEFERRED;
-      } else {
+      } else {  // 没有命中缓存
         final ResultLoader resultLoader = new ResultLoader(configuration, executor, nestedQuery, nestedQueryParameterObject, targetType, key, nestedBoundSql);
-        if (propertyMapping.isLazy()) {
+        if (propertyMapping.isLazy()) { // 是否懒加载
+          // 懒加载操作
           lazyLoader.addLoader(property, metaResultObject, resultLoader);
           value = DEFERRED;
-        } else {
+        } else {  // 没有懒加载
+          // 从数据库中使用子查询取值value，并返回
           value = resultLoader.loadResult();
         }
       }

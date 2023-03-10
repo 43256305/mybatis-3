@@ -154,6 +154,7 @@ public abstract class BaseExecutor implements Executor {
     }
     List<E> list;
     try {
+      // 这里，使用子查询时，如果没有缓存，每经过一层都会++
       queryStack++;
       // xjh-根据key获取缓存
       list = resultHandler == null ? (List<E>) localCache.getObject(key) : null;
@@ -167,7 +168,10 @@ public abstract class BaseExecutor implements Executor {
     } finally {
       queryStack--;
     }
+    // 如果子查询都处理完了
     if (queryStack == 0) {
+      // 处理所有的延迟加载，即给所有的依赖父查询对象的子查询对象填充父查询对象属性。
+      // deferredLoad为部分完成属性赋值的子查询对象。
       for (DeferredLoad deferredLoad : deferredLoads) {
         deferredLoad.load();
       }
@@ -176,6 +180,7 @@ public abstract class BaseExecutor implements Executor {
       // 设置了LocalCacheScope.STATEMENT，也会在queryStack == 0时清空缓存，所以子查询中是可以命中缓存的
       if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
         // issue #482
+        // 这里为什么在queryStack为1时清空缓存？因为解决循环依赖问题使用了一级缓存。所以我们要在父查询最终完成时才清空缓存。
         clearLocalCache();
       }
     }
@@ -194,9 +199,15 @@ public abstract class BaseExecutor implements Executor {
       throw new ExecutorException("Executor was closed.");
     }
     DeferredLoad deferredLoad = new DeferredLoad(resultObject, property, key, localCache, configuration, targetType);
+    // xjh-查看是否可以从缓存中加载，缓存中有值且值不为EXECUTION_PLACEHOLDER占位符
     if (deferredLoad.canLoad()) {
+      // 从缓存中加载并赋值给最终对象
       deferredLoad.load();
     } else {
+      // 我们从DefaultResultSetHandler进入到这个方法，就证明缓存中有值，而我们在前面deferredLoad.canLoad()==false，说明当前缓存中有值，且为占位符
+      // 所以，将子查询的数据加载到deferredLoads中，用于解决循环依赖。在query方法queryStack==0时，父查询会统一为循环依赖中的子查询对象填充属性。
+      // 能进入这里，一般都是存在循环依赖，且在处理子查询的属性填充阶段。
+      // 这里我们将子查询结果加入到队列中，然后正常退出，最后子查询对象部分构造（依赖父查询对象的属性还没有填充）完成并退回到父查询对象，父查询对象真正地构造完成，并回退到父查询的query方法，统一给依赖父查询对象的子查询对象赋值。
       deferredLoads.add(new DeferredLoad(resultObject, property, key, localCache, configuration, targetType));
     }
   }
@@ -332,6 +343,7 @@ public abstract class BaseExecutor implements Executor {
 
   private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
     List<E> list;
+    // 放置占位符，用于解决循环依赖。当父查询到这里时，会先将占位符放入，等子查询查询父查询的对象时，会获取到这个占位符。
     localCache.putObject(key, EXECUTION_PLACEHOLDER);
     try {
       // xjh-调用的是SimpleExecutor、ReuseExecutor、BatchExecutor实现的doQuery方法，此方法会真实地调用数据库
@@ -394,8 +406,11 @@ public abstract class BaseExecutor implements Executor {
     public void load() {
       @SuppressWarnings("unchecked")
       // we suppose we get back a List
+        // xjh-假设从缓存中加载了一个list
       List<Object> list = (List<Object>) localCache.getObject(key);
+      // 根据targetType判断返回对象，如果为list，则直接返回上面的list
       Object value = resultExtractor.extractObjectFromList(list, targetType);
+      // resultObject就是MetaObject就是查询对象，给查询对象的property属性赋值。
       resultObject.setValue(property, value);
     }
 
