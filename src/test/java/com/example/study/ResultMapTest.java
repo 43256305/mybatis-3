@@ -36,8 +36,8 @@ public class ResultMapTest {
       sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
     }
     // populate database
-    BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
-      "com/example/study/CreateDB.sql");
+//    BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
+//      "com/example/study/CreateDB.sql");
     sqlSession = sqlSessionFactory.openSession();
     mapper = sqlSession.getMapper(Mapper.class);
   }
@@ -69,6 +69,12 @@ public class ResultMapTest {
     // 这里会报错，使用jackson对懒加载对象序列化不会成功。可以使用java原生的序列化
     String s = objectMapper.writeValueAsString(blog1);
     System.out.println(s);
+  }
+
+  @Test
+  void test(){
+    Blog blog = mapper.getUnionBlogById(1);
+    System.out.println(blog);
   }
 
 

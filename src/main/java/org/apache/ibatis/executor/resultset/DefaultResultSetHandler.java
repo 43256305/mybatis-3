@@ -328,7 +328,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   //
 
   public void handleRowValues(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
-    // xjh-ResultMap中嵌套了ResultMap时，走这里
+    // xjh-ResultMap中嵌套了ResultMap时，走这里(一般是使用了join联合查询)
     if (resultMap.hasNestedResultMaps()) {
       ensureNoRowBounds();
       checkResultHandler();
@@ -439,28 +439,37 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   private Object getRowValue(ResultSetWrapper rsw, ResultMap resultMap, CacheKey combinedKey, String columnPrefix, Object partialObject) throws SQLException {
     final String resultMapId = resultMap.getId();
     Object rowValue = partialObject;
+    // 如果partialObject不为空，即当前为填充一对多的后面几行，如果为空，则说明当前为创建对象（可能是创建父对象，也可能是子对象）
     if (rowValue != null) {
       final MetaObject metaObject = configuration.newMetaObject(rowValue);
+      // 解决循环依赖
       putAncestor(rowValue, resultMapId);
+      // 填充复杂属性
       applyNestedResultMappings(rsw, resultMap, metaObject, columnPrefix, combinedKey, false);
       ancestorObjects.remove(resultMapId);
     } else {
       final ResultLoaderMap lazyLoader = new ResultLoaderMap();
+      // xjh-创建对象
       rowValue = createResultObject(rsw, resultMap, lazyLoader, columnPrefix);
       if (rowValue != null && !hasTypeHandlerForResultObject(rsw, resultMap.getType())) {
         final MetaObject metaObject = configuration.newMetaObject(rowValue);
         boolean foundValues = this.useConstructorMappings;
         if (shouldApplyAutomaticMappings(resultMap, true)) {
+          // 自动映射
           foundValues = applyAutomaticMappings(rsw, resultMap, metaObject, columnPrefix) || foundValues;
         }
+        // 手动映射
         foundValues = applyPropertyMappings(rsw, resultMap, metaObject, lazyLoader, columnPrefix) || foundValues;
+        // 父对象进来时会先将父对象放入到缓存中，如果子对象也依赖了父对象，则可以直接从缓存中取
         putAncestor(rowValue, resultMapId);
+        // 填充复杂属性（即处理被嵌套的resultMap，前面的自动映射与手动映射只是填充了简单属性）
         foundValues = applyNestedResultMappings(rsw, resultMap, metaObject, columnPrefix, combinedKey, true) || foundValues;
         ancestorObjects.remove(resultMapId);
         foundValues = lazyLoader.size() > 0 || foundValues;
         rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
       }
       if (combinedKey != CacheKey.NULL_CACHE_KEY) {
+        // 将对象放置到缓存中
         nestedResultObjects.put(combinedKey, rowValue);
       }
     }
@@ -946,11 +955,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
   private void handleRowValuesForNestedResultMap(ResultSetWrapper rsw, ResultMap resultMap, ResultHandler<?> resultHandler, RowBounds rowBounds, ResultMapping parentMapping) throws SQLException {
     final DefaultResultContext<Object> resultContext = new DefaultResultContext<>();
     ResultSet resultSet = rsw.getResultSet();
+    // xjh-跳过
     skipRows(resultSet, rowBounds);
     Object rowValue = previousRowValue;
+    // 循环处理，嵌套resultMap中，一对多时，每次处理一行。比如blog包含多个comment，则这里每个循环填充一个comment
     while (shouldProcessMoreRows(resultContext, rowBounds) && !resultSet.isClosed() && resultSet.next()) {
       final ResultMap discriminatedResultMap = resolveDiscriminatedResultMap(resultSet, resultMap, null);
+      // 创建rowKey
       final CacheKey rowKey = createRowKey(discriminatedResultMap, rsw, null);
+      // 从缓存中获取父对象，创建blog时，第一次进来为空，第二次进来已经有缓存了
       Object partialObject = nestedResultObjects.get(rowKey);
       // issue #577 && #542
       if (mappedStatement.isResultOrdered()) {
@@ -960,8 +973,10 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         }
         rowValue = getRowValue(rsw, discriminatedResultMap, rowKey, null, partialObject);
       } else {
+        // 这里
         rowValue = getRowValue(rsw, discriminatedResultMap, rowKey, null, partialObject);
         if (partialObject == null) {
+          // 将结果存储到DefaultResultHandler中
           storeObject(resultHandler, resultContext, rowValue, parentMapping, resultSet);
         }
       }
@@ -980,11 +995,15 @@ public class DefaultResultSetHandler implements ResultSetHandler {
 
   private boolean applyNestedResultMappings(ResultSetWrapper rsw, ResultMap resultMap, MetaObject metaObject, String parentPrefix, CacheKey parentRowKey, boolean newObject) {
     boolean foundValues = false;
+    // 遍历所有resultMapping，第一次进来时，这里会填充普通的嵌套对象和list类型的嵌套对象的第一个
     for (ResultMapping resultMapping : resultMap.getPropertyResultMappings()) {
       final String nestedResultMapId = resultMapping.getNestedResultMapId();
+      // 筛选出所有resultMapping中包含嵌套映射的项
       if (nestedResultMapId != null && resultMapping.getResultSet() == null) {
         try {
+          // 获取columnPrefix
           final String columnPrefix = getColumnPrefix(parentPrefix, resultMapping);
+          // 获取嵌套映射的ResultMap
           final ResultMap nestedResultMap = getNestedResultMap(rsw.getResultSet(), nestedResultMapId, columnPrefix);
           if (resultMapping.getColumnPrefix() == null) {
             // try to fill circular reference only when columnPrefix
@@ -992,19 +1011,26 @@ public class DefaultResultSetHandler implements ResultSetHandler {
             Object ancestorObject = ancestorObjects.get(nestedResultMapId);
             if (ancestorObject != null) {
               if (newObject) {
+                // 循环依赖时会进入到这里，如创建blog时会放入到ancestorObjects，而创建comment时，就可以直接从ancestorObjects中取出未创建完全的blog
                 linkObjects(metaObject, resultMapping, ancestorObject); // issue #385
               }
               continue;
             }
           }
+          // 获取nestedResultMap的rowKey
           final CacheKey rowKey = createRowKey(nestedResultMap, rsw, columnPrefix);
+          // 将父resultMap与子resultMap结合，算出cacheKey
           final CacheKey combinedKey = combineKeys(rowKey, parentRowKey);
+          // 根据key从缓存中取出rowValue
           Object rowValue = nestedResultObjects.get(combinedKey);
           boolean knownValue = rowValue != null;
           instantiateCollectionPropertyIfAppropriate(resultMapping, metaObject); // mandatory
+          // 判断数据库数据中notNullColumn指定的列是否有值
           if (anyNotNullColumnHasValue(resultMapping, columnPrefix, rsw)) {
+            // 如果notNullColumn有值，则需要创建子resultMap对应的子对象。
             rowValue = getRowValue(rsw, nestedResultMap, combinedKey, columnPrefix, rowValue);
-            if (rowValue != null && !knownValue) {
+            if (rowValue != null && !knownValue) {  // rowValue不为空，且knownValue为false，说明rowValue为上一步创建的子对象
+              // 如果子对象创建成功，则赋值给父对象相应的属性。metaObject为父对象，rowValue为子对象
               linkObjects(metaObject, resultMapping, rowValue);
               foundValues = true;
             }
@@ -1158,6 +1184,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
       final MetaObject targetMetaObject = configuration.newMetaObject(collectionProperty);
       targetMetaObject.add(rowValue);
     } else {
+      // xjh-设置值
       metaObject.setValue(resultMapping.getProperty(), rowValue);
     }
   }

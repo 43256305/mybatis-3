@@ -82,4 +82,40 @@ ResultMap与resultMap标签为一对一关系，ResultMap与ResultMapping是一�
     select * from blog where id = #{id}
   </select>
 
+<!--  关联查询
+使用关联查询时不能使用自动装配，要不然映射是mybatis分不清哪个id是哪个对象的id，所以必须得把所有字段都写出来，并且需要区分-->
+  <resultMap id="unionBlogMap" type="com.example.study.Blog">
+    <id property="id" column="blog_id"/>
+    <result property="title" column="title"/>
+    <result property="publishDate" column="publish_date"/>
+    <result property="body" column="body"/>
+<!--    下面指定了关联的mainAuthor的resultMap。一对一映射。我们也能够不引入result，而在association中编写id、result等标签-->
+<!--    notNullColumn:当查询出的user_name为空时，mainAuthor这个子属性将会置位空-->
+    <association property="mainAuthor" resultMap="unionUserMap" notNullColumn="user_name"/>
+<!--    一对多映射-->
+    <collection property="commentList" resultMap="unionCommentMap"/>
+  </resultMap>
+
+  <resultMap id="unionUserMap" type="com.example.study.User">
+    <id property="id" column="user_id"/>
+    <result property="name" column="user_name"/>
+  </resultMap>
+
+  <resultMap id="unionCommentMap" type="com.example.study.Comment">
+    <id property="id" column="comment_id"/>
+    <result property="blogId" column="blog_id"/>
+    <result property="comment" column="comment"/>
+    <association property="user" resultMap="unionUserMap" />
+    <association property="blog" resultMap="unionBlogMap" />
+  </resultMap>
+
+<!--  关联查询的sql需要自己手动编写。其实就是把所有字段都查询上来，mybatis只是负责将一行一行的字段映射到我们上面写的3个resultMap-->
+  <select id="getUnionBlogById" resultMap="unionBlogMap">
+    select blog.id as blog_id, blog.publish_date as publish_date, blog.title as title, blog.body as body, users.id as user_id, users.name as user_name,
+           comment.id as comment_id, comment.comment
+    from blog left join users on blog.main_author_id = users.id
+    left join comment on blog.id = comment.blog_id
+    where blog.id = #{id}
+  </select>
+
 </mapper>

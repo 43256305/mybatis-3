@@ -58,4 +58,6 @@ public interface Mapper {
   Blog getBlogById(@Param("id") Integer id);
 
   Blog getLazyBlogById(@Param("id") Integer id);
+
+  Blog getUnionBlogById(@Param("id") Integer id);
 }

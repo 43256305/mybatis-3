@@ -21,6 +21,9 @@ public class Blog implements Serializable {
 
   private String title;
 
+//  重点：
+//  出现非简单对象时一般如下设计：原始类与数据库表字段一一对应，不要出现多余属性。然后创建一个类继承原始类，增加了User、commentList等属性。
+//  同时，在定义resultMap时原始类定义一个resultMap，其他嵌套查询等定义一个resultMap extent原始类的resultMap
   private User mainAuthor;
 
   private String body;
