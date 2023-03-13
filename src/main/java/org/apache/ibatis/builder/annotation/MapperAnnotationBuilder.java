@@ -119,6 +119,7 @@ public class MapperAnnotationBuilder {
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+      // 解析Mapper接口中的二级缓存
       parseCache();
       parseCacheRef();
       // 解析Mapper接口中的各个方法
@@ -131,6 +132,7 @@ public class MapperAnnotationBuilder {
           parseResultMap(method);
         }
         try {
+          // 构造MappedStatement，并加入到configuration中
           parseStatement(method);
         } catch (IncompleteElementException e) {
           configuration.addIncompleteMethod(new MethodResolver(this, method));
@@ -177,6 +179,7 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        // 设置Mapper接口与xml的命名空间绑定
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
         // xjh-解析xml文件
         xmlParser.parse();
@@ -190,6 +193,7 @@ public class MapperAnnotationBuilder {
       Integer size = cacheDomain.size() == 0 ? null : cacheDomain.size();
       Long flushInterval = cacheDomain.flushInterval() == 0 ? null : cacheDomain.flushInterval();
       Properties props = convertToProperties(cacheDomain.properties());
+      // xjh-创建二级缓存，加入到configuration与assistant中，方便后面引用此缓存
       assistant.useNewCache(cacheDomain.implementation(), cacheDomain.eviction(), flushInterval, size, cacheDomain.readWrite(), cacheDomain.blocking(), props);
     }
   }

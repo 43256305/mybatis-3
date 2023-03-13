@@ -30,6 +30,7 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * xjh-MappedStatement 代表一个映射的 SQL 语句，通常对应于 Mapper XML 文件中的一个 <select>、<insert>、<update> 或 <delete> 标签。
  */
 public final class MappedStatement {
 

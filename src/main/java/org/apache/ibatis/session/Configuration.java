@@ -146,15 +146,19 @@ public class Configuration {
    */
   protected Class<?> configurationFactory;
 
+  // xjh-保存了我们定义的所有Mapper接口
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  // 代理链，用于生成代理的：Executor、ResultSetHandler、ParameterHandler、StatementHandler。简单工厂模式，用于标准化生成aop切面。
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
+  // xjh-解析的所有MappedStatement
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
+  // xjh-二级缓存。key为Mapper接口，value为SynchronizedCache
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
   // xjh-以id:ResultMap的形式保存了所有解析的ResultMap，id为resultMap标签的id。id统一有两个，一个是我们指定的id，一个是全限定名，如com.example.study.Mapper.blogMap。指向的ResultMap都是同一个
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
@@ -670,6 +674,7 @@ public class Configuration {
     executorType = executorType == null ? defaultExecutorType : executorType;
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
     Executor executor;
+    // xjh-根据配置创建SimpleExecutor、ReuseExecutor、BatchExecutor
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
@@ -677,9 +682,11 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    // 是否开启二级缓存
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    // 插件代理
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
