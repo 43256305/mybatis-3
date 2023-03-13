@@ -37,6 +37,7 @@ public class XMLScriptBuilder extends BaseBuilder {
   private final XNode context;
   private boolean isDynamic;
   private final Class<?> parameterType;
+  // xjh-注册的TrimHandler、WhereHandler等handler
   private final Map<String, NodeHandler> nodeHandlerMap = new HashMap<>();
 
   public XMLScriptBuilder(Configuration configuration, XNode context) {
@@ -52,6 +53,7 @@ public class XMLScriptBuilder extends BaseBuilder {
 
 
   private void initNodeHandlerMap() {
+    // xjh-针对每个节点注册一个Handler
     nodeHandlerMap.put("trim", new TrimHandler());
     nodeHandlerMap.put("where", new WhereHandler());
     nodeHandlerMap.put("set", new SetHandler());
@@ -64,8 +66,10 @@ public class XMLScriptBuilder extends BaseBuilder {
   }
 
   public SqlSource parseScriptNode() {
+    // 将sql解析成MixedSqlNode。context代表我们编写的原始的<select>块，只解析xml文件中的语句，不会解析.java文件中的注解。
     MixedSqlNode rootSqlNode = parseDynamicTags(context);
     SqlSource sqlSource;
+    // xjh-判断创建DynamicSqlSource还是RawSqlSource。
     if (isDynamic) {
       sqlSource = new DynamicSqlSource(configuration, rootSqlNode);
     } else {
@@ -77,19 +81,24 @@ public class XMLScriptBuilder extends BaseBuilder {
   protected MixedSqlNode parseDynamicTags(XNode node) {
     List<SqlNode> contents = new ArrayList<>();
     NodeList children = node.getNode().getChildNodes();
+    // xjh-遍历node子节点。
     for (int i = 0; i < children.getLength(); i++) {
       XNode child = node.newXNode(children.item(i));
+      // 判断子节点时textNode还是elementNode，动态sql中foreach、where等属于elementNode
       if (child.getNode().getNodeType() == Node.CDATA_SECTION_NODE || child.getNode().getNodeType() == Node.TEXT_NODE) {
         String data = child.getStringBody("");
         TextSqlNode textSqlNode = new TextSqlNode(data);
+        // 判断textSqlNode是否Dynamic。即包含${}
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
           isDynamic = true;
-        } else {
+        } else {  // 只包含普通文件或者#{}都不是动态
           contents.add(new StaticTextSqlNode(data));
         }
-      } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628
+      } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628  xjh-foreach、where语句会进入到下方
+        // 获取节点名，如foreach、where
         String nodeName = child.getNode().getNodeName();
+        // 这里可以获取到我们前面注册的ForEachHandler
         NodeHandler handler = nodeHandlerMap.get(nodeName);
         if (handler == null) {
           throw new BuilderException("Unknown element <" + nodeName + "> in SQL statement.");
@@ -98,9 +107,11 @@ public class XMLScriptBuilder extends BaseBuilder {
         isDynamic = true;
       }
     }
+    // 返回一个MixedSqlNode，包装我们前面解析的所有node
     return new MixedSqlNode(contents);
   }
 
+  // xjh-节点处理接口
   private interface NodeHandler {
     void handleNode(XNode nodeToHandle, List<SqlNode> targetContents);
   }
@@ -169,6 +180,7 @@ public class XMLScriptBuilder extends BaseBuilder {
 
     @Override
     public void handleNode(XNode nodeToHandle, List<SqlNode> targetContents) {
+      // 递归处理foreach的子节点，所以foreach标签中可以嵌套if、where等标签
       MixedSqlNode mixedSqlNode = parseDynamicTags(nodeToHandle);
       String collection = nodeToHandle.getStringAttribute("collection");
       String item = nodeToHandle.getStringAttribute("item");
@@ -176,7 +188,9 @@ public class XMLScriptBuilder extends BaseBuilder {
       String open = nodeToHandle.getStringAttribute("open");
       String close = nodeToHandle.getStringAttribute("close");
       String separator = nodeToHandle.getStringAttribute("separator");
+      // xjh-创建一个ForEachSqlNode
       ForEachSqlNode forEachSqlNode = new ForEachSqlNode(configuration, mixedSqlNode, collection, index, item, open, close, separator);
+      // targetContents为我们前面定义的子节点list，包含了所有解析的SqlNode
       targetContents.add(forEachSqlNode);
     }
   }
@@ -188,6 +202,7 @@ public class XMLScriptBuilder extends BaseBuilder {
 
     @Override
     public void handleNode(XNode nodeToHandle, List<SqlNode> targetContents) {
+      // xjh-递归解析if标签子节点
       MixedSqlNode mixedSqlNode = parseDynamicTags(nodeToHandle);
       String test = nodeToHandle.getStringAttribute("test");
       IfSqlNode ifSqlNode = new IfSqlNode(mixedSqlNode, test);

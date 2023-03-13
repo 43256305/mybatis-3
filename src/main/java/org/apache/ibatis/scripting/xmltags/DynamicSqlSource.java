@@ -22,10 +22,12 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * xjh-代表一个包含了<if>、<where>等标签的sql，每次执行sql语句都需要编译一次
  */
 public class DynamicSqlSource implements SqlSource {
 
   private final Configuration configuration;
+  // xjh-根节点，一般为MixedSqlNode
   private final SqlNode rootSqlNode;
 
   public DynamicSqlSource(Configuration configuration, SqlNode rootSqlNode) {
@@ -33,12 +35,18 @@ public class DynamicSqlSource implements SqlSource {
     this.rootSqlNode = rootSqlNode;
   }
 
+  /**
+   * 每次调用getBoundSql方法都会解析一遍sql。
+   * */
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // xjh-创建context
     DynamicContext context = new DynamicContext(configuration, parameterObject);
+    // 节点解析sql到context中。
     rootSqlNode.apply(context);
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
+    // 解析操作主要是完成一下两点：1.把#{}变成? 1.将#{}中的值拿出来变成ParameterMapping。生成的SqlSource，其实就是StaticSqlSource。
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     context.getBindings().forEach(boundSql::setAdditionalParameter);

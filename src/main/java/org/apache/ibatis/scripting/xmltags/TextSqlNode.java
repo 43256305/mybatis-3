@@ -24,6 +24,7 @@ import org.apache.ibatis.type.SimpleTypeRegistry;
 
 /**
  * @author Clinton Begin
+ * xjh-代表${}
  */
 public class TextSqlNode implements SqlNode {
   private final String text;

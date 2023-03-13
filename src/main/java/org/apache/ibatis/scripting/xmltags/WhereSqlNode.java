@@ -22,6 +22,7 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * xjh-WhereSqlNode继承了TrimSqlNode，定义了一些需要去除的符号，如AND、OR等
  */
 public class WhereSqlNode extends TrimSqlNode {
 

@@ -60,4 +60,6 @@ public interface Mapper {
   Blog getLazyBlogById(@Param("id") Integer id);
 
   Blog getUnionBlogById(@Param("id") Integer id);
+
+  User[] findByIds(@Param("list") List<Integer> list);
 }

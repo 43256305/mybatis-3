@@ -17,7 +17,9 @@ package org.apache.ibatis.scripting.xmltags;
 
 /**
  * @author Clinton Begin
+ * xjh-SqlNode总接口。DynamicSqlSource使用解释器模式来解析sql，他包含了此SqlNode子类的树结构，每经过一个节点，都会拼接相应解析的sql到context，直到sql解析结束。
  */
 public interface SqlNode {
+  // xjh-将解析的文本放入到context中，并返回是否解析成功
   boolean apply(DynamicContext context);
 }

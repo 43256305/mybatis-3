@@ -33,6 +33,7 @@ import org.apache.ibatis.session.defaults.DefaultSqlSessionFactory;
 public class SqlSessionFactoryBuilder {
 
   public SqlSessionFactory build(Reader reader) {
+    // xjh-here
     return build(reader, null, null);
   }
 
@@ -47,6 +48,7 @@ public class SqlSessionFactoryBuilder {
   public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
     try {
       XMLConfigBuilder parser = new XMLConfigBuilder(reader, environment, properties);
+      // xjh-解析配置文件
       return build(parser.parse());
     } catch (Exception e) {
       throw ExceptionFactory.wrapException("Error building SqlSession.", e);

@@ -118,4 +118,15 @@ ResultMap与resultMap标签为一对一关系，ResultMap与ResultMapping是一�
     where blog.id = #{id}
   </select>
 
+<!--  下面的sql语句SqlNode树结构如下：
+MixedSqlNode：StaticTextSqlNode、ForEachSqlNode（MixedSqlNode：StaticTextSqlNode）、StaticTextSqlNode
+-->
+  <select id="findByIds" resultType="com.example.study.User">
+    select * from users
+             where id in
+             <foreach collection="list" open="(" close=")" separator="," item="item">
+               #{item}
+             </foreach>
+  </select>
+
 </mapper>

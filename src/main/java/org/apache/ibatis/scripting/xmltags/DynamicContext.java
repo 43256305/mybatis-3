@@ -38,6 +38,7 @@ public class DynamicContext {
     OgnlRuntime.setPropertyAccessor(ContextMap.class, new ContextAccessor());
   }
 
+  // xjh-参数绑定，如foreach语句中#{__frch_item_1}对应的值
   private final ContextMap bindings;
   private final StringJoiner sqlBuilder = new StringJoiner(" ");
   private int uniqueNumber = 0;

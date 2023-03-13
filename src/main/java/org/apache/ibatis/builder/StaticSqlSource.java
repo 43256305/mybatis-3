@@ -24,6 +24,8 @@ import org.apache.ibatis.session.Configuration;
 
 /**
  * @author Clinton Begin
+ * xjh-将被DynamicSqlSource与RawSqlSource编译的sql包装成BoundSql
+ * DynamicSqlSource、RawSqlSource、StaticSqlSource都实现了SqlSource接口
  */
 public class StaticSqlSource implements SqlSource {
 

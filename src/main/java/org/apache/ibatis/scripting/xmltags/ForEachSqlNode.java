@@ -27,6 +27,7 @@ public class ForEachSqlNode implements SqlNode {
   public static final String ITEM_PREFIX = "__frch_";
 
   private final ExpressionEvaluator evaluator;
+  // xjh-列表参数名，如idList
   private final String collectionExpression;
   private final SqlNode contents;
   private final String open;
@@ -51,15 +52,19 @@ public class ForEachSqlNode implements SqlNode {
   @Override
   public boolean apply(DynamicContext context) {
     Map<String, Object> bindings = context.getBindings();
+    // xjh-获取我们传入列表参数的迭代器
     final Iterable<?> iterable = evaluator.evaluateIterable(collectionExpression, bindings);
     if (!iterable.iterator().hasNext()) {
       return true;
     }
     boolean first = true;
+    // 增加open前缀
     applyOpen(context);
     int i = 0;
+    // 遍历参数列表
     for (Object o : iterable) {
       DynamicContext oldContext = context;
+      // 如果为列表第一个，则不需要添加分隔符
       if (first || separator == null) {
         context = new PrefixedContext(context, "");
       } else {
@@ -70,12 +75,15 @@ public class ForEachSqlNode implements SqlNode {
       if (o instanceof Map.Entry) {
         @SuppressWarnings("unchecked")
         Map.Entry<Object, Object> mapEntry = (Map.Entry<Object, Object>) o;
+        // 如果传入的列表为一个Map，则将key作为index，将value作为item
         applyIndex(context, mapEntry.getKey(), uniqueNumber);
         applyItem(context, mapEntry.getValue(), uniqueNumber);
       } else {
+        // 如果为不为Map的列表，则将下标作为index，将列表中当前值作为item。并将这些值绑定到context中，以供后面使用
         applyIndex(context, i, uniqueNumber);
         applyItem(context, o, uniqueNumber);
       }
+      // 遍历子节点（如果没有除了默认子节点之外的其他用户定义子节点的话，就是将#{item}替换成#{__frch_item_0}，调用的是ForEachSqlNode::appendSql方法）
       contents.apply(new FilteredDynamicContext(configuration, context, index, item, uniqueNumber));
       if (first) {
         first = !((PrefixedContext) context).isPrefixApplied();
@@ -83,7 +91,9 @@ public class ForEachSqlNode implements SqlNode {
       context = oldContext;
       i++;
     }
+    // 添加close后缀
     applyClose(context);
+    // 将我们前面在binding中添加的item与index去除
     context.getBindings().remove(item);
     context.getBindings().remove(index);
     return true;

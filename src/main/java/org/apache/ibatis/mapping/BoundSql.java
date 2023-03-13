@@ -31,14 +31,21 @@ import org.apache.ibatis.session.Configuration;
  * <p>
  * Can also have additional parameters that are created by the dynamic language (for loops, bind...).
  *
+ * xjh-解析最后的sql
+ *
  * @author Clinton Begin
  */
 public class BoundSql {
 
+  // xjh-包含很多问号的sql语句
   private final String sql;
+  // 用户传入与sql中问号对应的参数参数
   private final List<ParameterMapping> parameterMappings;
+  // 用户传入原始参数
   private final Object parameterObject;
+  // 原始参数解析之后的参数，如foreach中参数会先解析
   private final Map<String, Object> additionalParameters;
+  // 上面parameterObject的MetaObject包装
   private final MetaObject metaParameters;
 
   public BoundSql(Configuration configuration, String sql, List<ParameterMapping> parameterMappings, Object parameterObject) {
