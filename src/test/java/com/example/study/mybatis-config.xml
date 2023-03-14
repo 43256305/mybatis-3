@@ -38,6 +38,11 @@
     <setting name="aggressiveLazyLoading" value="false"/>
   </settings>
 
+<!--  增加插件-->
+  <plugins>
+    <plugin interceptor="com.example.study.plugin.PagePlugin"></plugin>
+  </plugins>
+
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC">

@@ -148,7 +148,8 @@ public class Configuration {
 
   // xjh-保存了我们定义的所有Mapper接口
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
-  // 代理链，用于生成代理的：Executor、ResultSetHandler、ParameterHandler、StatementHandler。简单工厂模式，用于标准化生成aop切面。
+  // 代理链，用于生成代理的：Executor、ResultSetHandler、ParameterHandler、StatementHandler。简单工厂模式，用于标准化生成aop切面，使用jdk动态代理。
+  // 使用configuration生成这几个类时，都会经过interceptorChain的所有代理类，interceptorChain中的每个代理类都会寻找到自己应该代理的类去实现代理。
   protected final InterceptorChain interceptorChain = new InterceptorChain();
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
@@ -662,6 +663,7 @@ public class Configuration {
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
     // xjh-生成RoutingStatementHandler，根据不同的statementType来生成不同的delegate，RoutingStatementHandler除了用来生成delegate，没有其他操作。
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+    // 这里为StatementHandler设置代理
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
   }

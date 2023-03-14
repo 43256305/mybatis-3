@@ -22,12 +22,12 @@
 
 <mapper namespace="com.example.study.Mapper">
 
-  <cache/>
+  <cache-ref namespace="com.example.study.Mapper"/>
 
 <!--
 使用二级缓存需要完成下面三步配置：
 1.mybatis-config.xml中setting开启缓存：<setting name = "cacheEnabled" value = "true" />
-2.mapper文件中使用<cache/>
+2.mapper文件中使用<cache/>（注意xml文件与mapper接口使用的不是同一个缓存空间，使用时我们可以使用@CacheNamespace开启缓存，在xml文件中使用cache-ref指向此缓存）
 3.相关的查询语句使用useCache="true"
 另外，实体类还需要实现序列化接口
 -->

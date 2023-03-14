@@ -15,14 +15,13 @@
  */
 package com.example.study;
 
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import com.example.study.plugin.Page;
+import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.session.RowBounds;
 
 import java.util.List;
 
+@CacheNamespace
 public interface Mapper {
 
   @Select("select * from users")
@@ -62,4 +61,7 @@ public interface Mapper {
   Blog getUnionBlogById(@Param("id") Integer id);
 
   User[] findByIds(@Param("list") List<Integer> list);
+
+  @Select("select * from users where name = #{name}")
+  User[] findByPage(Page page, @Param("name") String name);
 }

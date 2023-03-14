@@ -73,6 +73,7 @@ public class DefaultParameterHandler implements ParameterHandler {
           // propertyName为sql中想要的参数名字
           String propertyName = parameterMapping.getProperty();
           if (boundSql.hasAdditionalParameter(propertyName)) { // issue #448 ask first for additional params
+            // foreach等生成的参数
             value = boundSql.getAdditionalParameter(propertyName);
           } else if (parameterObject == null) {  // 传入的参数为空
             value = null;

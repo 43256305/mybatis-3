@@ -42,10 +42,14 @@ public class Plugin implements InvocationHandler {
   }
 
   public static Object wrap(Object target, Interceptor interceptor) {
+    // xjh-获取@Intercepts注解
     Map<Class<?>, Set<Method>> signatureMap = getSignatureMap(interceptor);
     Class<?> type = target.getClass();
+    // 获取type中我们在signatureMap中定义的需要拦截的接口
     Class<?>[] interfaces = getAllInterfaces(type, signatureMap);
+    // 如果type没有实现我们需要拦截的接口，则直接返回
     if (interfaces.length > 0) {
+      // 如果type实现了我们需要拦截的接口，则设置动态代理
       return Proxy.newProxyInstance(
           type.getClassLoader(),
           interfaces,
@@ -58,9 +62,11 @@ public class Plugin implements InvocationHandler {
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
       Set<Method> methods = signatureMap.get(method.getDeclaringClass());
+      // 如果为我们代理类的代理方法，则使用interceptor调用
       if (methods != null && methods.contains(method)) {
         return interceptor.intercept(new Invocation(target, method, args));
       }
+      // 如果不是，则直接调用
       return method.invoke(target, args);
     } catch (Exception e) {
       throw ExceptionUtil.unwrapThrowable(e);
@@ -91,6 +97,7 @@ public class Plugin implements InvocationHandler {
     Set<Class<?>> interfaces = new HashSet<>();
     while (type != null) {
       for (Class<?> c : type.getInterfaces()) {
+        // 如果签名包含type的接口（即type为我们需要拦截的类）
         if (signatureMap.containsKey(c)) {
           interfaces.add(c);
         }

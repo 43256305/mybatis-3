@@ -133,6 +133,7 @@ public abstract class BaseExecutor implements Executor {
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
+    // 生成BoundSql，传入前面ParamNameResolver解析的参数
     BoundSql boundSql = ms.getBoundSql(parameter);
     // xjh-创建缓存key
     // key的组成：statementId（如com.example.study.Mapper.getUserById）、rowBounds、sql statement、parameter、env（如dev、pro）
