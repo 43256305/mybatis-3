@@ -2,6 +2,7 @@ package com.example.study.plugin;
 
 import com.example.study.Mapper;
 import com.example.study.User;
+import org.apache.ibatis.BaseDataTest;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.session.Configuration;
@@ -39,8 +40,8 @@ public class PageTest {
       sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
     }
     // populate database
-//    BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
-//      "com/example/study/CreateDB.sql");
+    BaseDataTest.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
+      "com/example/study/CreateDB.sql");
     sqlSession = sqlSessionFactory.openSession();
     configuration = sqlSessionFactory.getConfiguration();
     mapper = sqlSession.getMapper(Mapper.class);

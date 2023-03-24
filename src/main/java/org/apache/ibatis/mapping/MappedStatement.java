@@ -39,11 +39,14 @@ public final class MappedStatement {
   private String id;
   private Integer fetchSize;
   private Integer timeout;
+  // SQL 语句的类型，如 SELECT、UPDATE、DELETE 等
   private StatementType statementType;
   private ResultSetType resultSetType;
+  // SQL 语句的封装类，包含 SQL 语句和参数映射信息
   private SqlSource sqlSource;
   private Cache cache;
   private ParameterMap parameterMap;
+  // 输出结果的映射信息
   private List<ResultMap> resultMaps;
   private boolean flushCacheRequired;
   private boolean useCache;

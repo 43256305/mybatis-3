@@ -21,6 +21,7 @@ import org.apache.ibatis.session.RowBounds;
 
 import java.util.List;
 
+// @CacheNamespace可以指定缓存实现类（默认为PerpetualCache），缓存大小等
 @CacheNamespace
 public interface Mapper {
 
@@ -36,6 +37,7 @@ public interface Mapper {
   int[] getUserIdsPrimitive();
 
   @Update("update users set name = #{name} where id = #{id}")
+//  @Options(flushCache = Options.FlushCachePolicy.FALSE)
   void updateNameById(@Param("name") String name, @Param("id") Integer id);
 
   @Select("select * from users where id = #{id}")

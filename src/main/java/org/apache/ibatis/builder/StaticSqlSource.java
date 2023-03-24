@@ -30,6 +30,7 @@ import org.apache.ibatis.session.Configuration;
 public class StaticSqlSource implements SqlSource {
 
   private final String sql;
+  // parameterMappings为所有参数与sql中?的对应关系，list中第一个值代表sql中第一个?的值
   private final List<ParameterMapping> parameterMappings;
   private final Configuration configuration;
 
@@ -45,6 +46,8 @@ public class StaticSqlSource implements SqlSource {
 
   @Override
   public BoundSql getBoundSql(Object parameterObject) {
+    // parameterMappings为所有参数与sql中?的对应关系，list中第一个值代表sql中第一个?的值
+    // parameterObject经过前面ParamNameResolver.getNamedParams(args)解析的参数
     return new BoundSql(configuration, sql, parameterMappings, parameterObject);
   }
 

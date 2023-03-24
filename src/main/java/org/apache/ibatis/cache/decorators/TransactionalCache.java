@@ -40,7 +40,6 @@ public class TransactionalCache implements Cache {
   //xjh-此类中所有操作，除了commit，都是对暂存区的操作，而没有修改缓存区
   // 另外，TransactionalCache与TransactionalCacheManager类都没有update操作，CachingExecutor的update操作都是直接操作操作BaseExecutor，并且根据flushCacheRequired判断是否清空暂存区。
   // 查询操作时（getObject），我们可以看到，是直接从缓存区（delegate）中取数据的，而没有从暂存区取数据。
-
   private static final Log log = LogFactory.getLog(TransactionalCache.class);
 
   // xjh-二级缓存的缓存区，一般为SynchronizedCache类

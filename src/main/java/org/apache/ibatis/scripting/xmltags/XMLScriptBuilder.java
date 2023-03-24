@@ -92,7 +92,7 @@ public class XMLScriptBuilder extends BaseBuilder {
         if (textSqlNode.isDynamic()) {
           contents.add(textSqlNode);
           isDynamic = true;
-        } else {  // 只包含普通文件或者#{}都不是动态
+        } else {  // 只包含普通文本或者#{}都不是动态
           contents.add(new StaticTextSqlNode(data));
         }
       } else if (child.getNode().getNodeType() == Node.ELEMENT_NODE) { // issue #628  xjh-foreach、where语句会进入到下方

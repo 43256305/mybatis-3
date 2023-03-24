@@ -94,6 +94,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     if (!configuration.isResourceLoaded(resource)) {
       // xjh-解析xml文件
       configurationElement(parser.evalNode("/mapper"));
+      // 将resource加入configuration的loadedResources中，记录此mapper已经被加载
       configuration.addLoadedResource(resource);
       bindMapperForNamespace();
     }
@@ -248,6 +249,7 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   private void resultMapElements(List<XNode> list) {
+    // 循环处理所有resultMap标签
     for (XNode resultMapNode : list) {
       try {
         // xjh-here
@@ -278,7 +280,7 @@ public class XMLMapperBuilder extends BaseBuilder {
     Discriminator discriminator = null;
     List<ResultMapping> resultMappings = new ArrayList<>(additionalResultMappings);
     List<XNode> resultChildren = resultMapNode.getChildren();
-    // 将resultMap的字标签一个个全部处理成ResultMapping，并加入到resultMappings中
+    // 将resultMap的子标签一个个全部处理成ResultMapping，并加入到resultMappings中
     for (XNode resultChild : resultChildren) {
       if ("constructor".equals(resultChild.getName())) {
         // 将constructor处理成一个ResultMapping，并加入resultMappings

@@ -66,6 +66,7 @@ public class MapperRegistry {
       }
       boolean loadCompleted = false;
       try {
+        // 构造代理mapper工厂
         knownMappers.put(type, new MapperProxyFactory<>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
@@ -103,7 +104,9 @@ public class MapperRegistry {
   public void addMappers(String packageName, Class<?> superType) {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
+    // 获取包下所有类
     Set<Class<? extends Class<?>>> mapperSet = resolverUtil.getClasses();
+    // 遍历每一个扫描到的类
     for (Class<?> mapperClass : mapperSet) {
       addMapper(mapperClass);
     }

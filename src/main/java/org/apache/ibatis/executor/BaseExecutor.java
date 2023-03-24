@@ -181,7 +181,7 @@ public abstract class BaseExecutor implements Executor {
       // 设置了LocalCacheScope.STATEMENT，也会在queryStack == 0时清空缓存，所以子查询中是可以命中缓存的
       if (configuration.getLocalCacheScope() == LocalCacheScope.STATEMENT) {
         // issue #482
-        // 这里为什么在queryStack为1时清空缓存？因为解决循环依赖问题使用了一级缓存。所以我们要在父查询最终完成时才清空缓存。
+        // 这里为什么在queryStack为0时清空缓存？因为解决循环依赖问题使用了一级缓存。所以我们要在父查询最终完成时才清空缓存。
         clearLocalCache();
       }
     }
@@ -201,6 +201,7 @@ public abstract class BaseExecutor implements Executor {
     }
     DeferredLoad deferredLoad = new DeferredLoad(resultObject, property, key, localCache, configuration, targetType);
     // xjh-查看是否可以从缓存中加载，缓存中有值且值不为EXECUTION_PLACEHOLDER占位符
+    // 能进入到这里，说明子查询已经被执行过了，直接返回缓存即可。进入到这里说明并不存在循环依赖，只是子查询被执行过了而已。
     if (deferredLoad.canLoad()) {
       // 从缓存中加载并赋值给最终对象
       deferredLoad.load();
@@ -286,6 +287,7 @@ public abstract class BaseExecutor implements Executor {
   @Override
   public void clearLocalCache() {
     if (!closed) {
+      // 一个SqlSession对应了一个BaseExecutor，对应了一个localCache，所以，一旦调用了clear方法，此sqlSession中的所有一级缓存都被清空了
       localCache.clear();
       localOutputParameterCache.clear();
     }

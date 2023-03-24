@@ -48,7 +48,9 @@ public class DynamicSqlSource implements SqlSource {
     Class<?> parameterType = parameterObject == null ? Object.class : parameterObject.getClass();
     // 解析操作主要是完成一下两点：1.把#{}变成? 1.将#{}中的值拿出来变成ParameterMapping。生成的SqlSource，其实就是StaticSqlSource。
     SqlSource sqlSource = sqlSourceParser.parse(context.getSql(), parameterType, context.getBindings());
+    // 这里的sqlSource为上一步返回的StaticSqlSource，将我们ParamNameResolver解析出来的参数放置到boundSql中
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
+    // 将foreach中放置在binding中的参数全部放置到boundSql中。另外parameterObject还放置在了bindings中，key为：_parameter value：parameterObject
     context.getBindings().forEach(boundSql::setAdditionalParameter);
     return boundSql;
   }

@@ -29,6 +29,7 @@ public class PerpetualCache implements Cache {
   private final String id;
 
   // xjh-一级缓存内部其实就是HashMap。为什么不使用ConcurrentHashMap呢？因为一级缓存是基于会话的，而会话就不是线程安全的。
+  // 二级缓存的内部也是使用了此cache来保存，而二级缓存是应用级缓存，为什么也用非线程安全容器呢？因为二级缓存最外层有SynchronizedCache包裹，所以都是线程安全的。
   private final Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {

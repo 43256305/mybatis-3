@@ -49,6 +49,7 @@ public class ResultMapTest {
 
   @Test
   void resultMapTest(){
+    // 子查询
     Blog blog = mapper.getBlogById(1);
     System.out.println(blog);
   }

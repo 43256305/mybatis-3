@@ -50,9 +50,11 @@ public class XMLLanguageDriver implements LanguageDriver {
     // issue #3
     if (script.startsWith("<script>")) {
       XPathParser parser = new XPathParser(script, false, configuration.getVariables(), new XMLMapperEntityResolver());
+      // 如果脚本是<script>标签，则使用与xml生成sqlSource一样的方法
       return createSqlSource(configuration, parser.evalNode("/script"), parameterType);
     } else {
       // issue #127
+      // xjh-判断sql中是否包含${}，如果包含则为动态sql
       script = PropertyParser.parse(script, configuration.getVariables());
       TextSqlNode textSqlNode = new TextSqlNode(script);
       if (textSqlNode.isDynamic()) {

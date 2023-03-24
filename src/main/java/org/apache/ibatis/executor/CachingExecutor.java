@@ -90,7 +90,7 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     BoundSql boundSql = ms.getBoundSql(parameterObject);
-    // xjh-获取二级缓存key
+    // xjh-获取二级缓存缓存区key（同样也是一级缓存的key），通过此key获取PerpetualCache中的真正缓存
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
@@ -98,7 +98,8 @@ public class CachingExecutor implements Executor {
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
-    // 获取ms中的cache，每一个MappedStatement都保存了一个cache。
+    // 获取ms中的cache，每一个MappedStatement都保存了一个cache，一个cache代表一个缓存空间，其实就是二级缓存的缓存区(SynchronizedCache)，在程序启动时会自动创建，参考MapperAnnotationBuilder类。
+    // cache为二级缓存暂存区key，可以通过此cache获取二级缓存暂存区（TransactionalCache），通过CacheKey与暂存区获取缓存区中真正的缓存
     Cache cache = ms.getCache();
     // xjh-如果设置中配了缓存则尝试使用二级缓存
     if (cache != null) {
@@ -178,6 +179,7 @@ public class CachingExecutor implements Executor {
     Cache cache = ms.getCache();
     // xjh-只有开启了二级缓存，且flushCacheRequired为true才会清空暂存区。
     // 所以我们可以将flushCacheRequired配置为false来阻止每次修改都清空暂存区。
+    // 注意，update方法的默认flushCacheRequired就是为true，所以如果我们没有特定配置更新方法的flushCacheRequired为false，则每次更新都会将clearOnCommit置为true，且清空缓存区，即更新之后我们查询是不会走缓存的
     if (cache != null && ms.isFlushCacheRequired()) {
       tcm.clear(cache);
     }

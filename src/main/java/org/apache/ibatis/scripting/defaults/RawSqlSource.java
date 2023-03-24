@@ -46,7 +46,7 @@ public class RawSqlSource implements SqlSource {
   public RawSqlSource(Configuration configuration, String sql, Class<?> parameterType) {
     SqlSourceBuilder sqlSourceParser = new SqlSourceBuilder(configuration);
     Class<?> clazz = parameterType == null ? Object.class : parameterType;
-    // xjh-只有第一次构造时会parse sql，后面直接取sqlSource的缓存
+    // xjh-只有第一次构造时会parse sql，后面直接取sqlSource的缓存。其中时就会调用解析方法，而不会真的等到第一次sql调用。
     // 解析操作主要是完成一下两点：1.把#{}变成? 1.将#{}中的值拿出来变成ParameterMapping
     sqlSource = sqlSourceParser.parse(sql, clazz, new HashMap<>());
   }

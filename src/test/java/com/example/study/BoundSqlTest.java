@@ -92,4 +92,10 @@ public class BoundSqlTest {
     System.out.println(Arrays.toString(userList));
   }
 
+  @Test
+  void rawSqlSourceTest(){
+    User user = mapper.getUserById(1);
+    System.out.println(user);
+  }
+
 }

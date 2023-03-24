@@ -468,6 +468,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         foundValues = lazyLoader.size() > 0 || foundValues;
         rowValue = foundValues || configuration.isReturnInstanceForEmptyRow() ? rowValue : null;
       }
+      //
       if (combinedKey != CacheKey.NULL_CACHE_KEY) {
         // 将对象放置到缓存中
         nestedResultObjects.put(combinedKey, rowValue);
@@ -859,6 +860,7 @@ public class DefaultResultSetHandler implements ResultSetHandler {
           value = DEFERRED;
         } else {  // 没有懒加载
           // 从数据库中使用子查询取值value，并返回
+          // 在构造父对象时，填充子查询对象时会走到这里，这里直接返回查询到的子对象，父对象就能顺利构造完成了。如果存在循环依赖，则返回的子对象为未完全构造完成的对象。
           value = resultLoader.loadResult();
         }
       }

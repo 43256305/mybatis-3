@@ -39,11 +39,11 @@ public class BoundSql {
 
   // xjh-包含很多问号的sql语句
   private final String sql;
-  // 用户传入与sql中问号对应的参数参数
+  // 用户传入参数与sql中问号对应关系
   private final List<ParameterMapping> parameterMappings;
-  // 用户传入单个非@Param参数时，为用户传入参数。否则，为Map。参考ParamNameResolver.getNamedParams()方法
+  // 用户传入单个非@Param非集合参数时，为用户传入参数。否则，为Map。参考ParamNameResolver.getNamedParams()方法
   private final Object parameterObject;
-  // 原始参数解析之后的参数，如foreach中参数会先解析
+  // 原始参数解析之后的参数，如foreach解析参数
   private final Map<String, Object> additionalParameters;
   // 上面additionalParameters的MetaObject包装
   private final MetaObject metaParameters;

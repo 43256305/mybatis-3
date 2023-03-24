@@ -115,12 +115,14 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
-      // xjh-加载xml文件
+      // xjh-加载xml文件，下面都是解析mapper类，只有这里是解析xml文件
       loadXmlResource();
       configuration.addLoadedResource(resource);
+      // 设置命名空间，type就是我们<mapper>标签定义的class类
       assistant.setCurrentNamespace(type.getName());
-      // 解析Mapper接口中的二级缓存
+      // 解析@CacheNamespace
       parseCache();
+      // 解析@CacheNamespaceRef
       parseCacheRef();
       // 解析Mapper接口中的各个方法
       for (Method method : type.getMethods()) {
@@ -133,6 +135,7 @@ public class MapperAnnotationBuilder {
         }
         try {
           // 构造MappedStatement，并加入到configuration中
+          // 涉及keyGenerator，flushCache，sqlSource、mappedStatementId等等重要信息的构建
           parseStatement(method);
         } catch (IncompleteElementException e) {
           configuration.addIncompleteMethod(new MethodResolver(this, method));
@@ -305,11 +308,13 @@ public class MapperAnnotationBuilder {
     final LanguageDriver languageDriver = getLanguageDriver(method);
 
     getAnnotationWrapper(method, true, statementAnnotationTypes).ifPresent(statementAnnotation -> {
+      // 构造sqlSource
       final SqlSource sqlSource = buildSqlSource(statementAnnotation.getAnnotation(), parameterTypeClass, languageDriver, method);
       final SqlCommandType sqlCommandType = statementAnnotation.getSqlCommandType();
       final Options options = getAnnotationWrapper(method, false, Options.class).map(x -> (Options)x.getAnnotation()).orElse(null);
       final String mappedStatementId = type.getName() + "." + method.getName();
 
+      // 生成keyGenerator
       final KeyGenerator keyGenerator;
       String keyProperty = null;
       String keyColumn = null;
@@ -335,9 +340,11 @@ public class MapperAnnotationBuilder {
       StatementType statementType = StatementType.PREPARED;
       ResultSetType resultSetType = configuration.getDefaultResultSetType();
       boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
+      // 如果不是SELECT方法，则flushCache默认为true
       boolean flushCache = !isSelect;
       boolean useCache = isSelect;
       if (options != null) {
+        // 如果设置了FlushCachePolicy，则采用policy
         if (FlushCachePolicy.TRUE.equals(options.flushCache())) {
           flushCache = true;
         } else if (FlushCachePolicy.FALSE.equals(options.flushCache())) {
@@ -352,6 +359,7 @@ public class MapperAnnotationBuilder {
         }
       }
 
+      // 生成resultMapId
       String resultMapId = null;
       if (isSelect) {
         ResultMap resultMapAnnotation = method.getAnnotation(ResultMap.class);

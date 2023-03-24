@@ -26,7 +26,7 @@ import org.apache.ibatis.util.MapUtil;
  */
 public class TransactionalCacheManager {
 
-  // xjh-key：缓存空间。value：暂存区（暂存区包裹了缓存区）
+  // xjh-key：缓存空间（二级缓存缓存区，即SynchronizedCache）。value：暂存区（暂存区包裹了缓存区）
   private final Map<Cache, TransactionalCache> transactionalCaches = new HashMap<>();
 
   public void clear(Cache cache) {
@@ -56,6 +56,7 @@ public class TransactionalCacheManager {
   }
 
   private TransactionalCache getTransactionalCache(Cache cache) {
+    // 将cache作为key，取出TransactionalCache。如果没有，则新建一个TransactionalCache，并且将cache作为delegate传入TransactionalCache
     return MapUtil.computeIfAbsent(transactionalCaches, cache, TransactionalCache::new);
   }
 

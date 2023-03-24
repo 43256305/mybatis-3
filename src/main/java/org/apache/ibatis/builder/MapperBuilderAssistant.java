@@ -136,7 +136,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .readWrite(readWrite)
         .blocking(blocking)
         .properties(props)
-        .build();
+        .build();  // xjh-创建缓存
     configuration.addCache(cache);
     currentCache = cache;
     return cache;

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.Reader;
+import java.util.Arrays;
 
 /**
  * @author ：xjh
@@ -93,6 +94,24 @@ public class SecondCacheTest {
     SqlSession sqlSession2 = sqlSessionFactory.openSession(true);
     Mapper mapper2 = sqlSession2.getMapper(Mapper.class);
     mapper2.getUsersXml();
+
+  }
+
+  @Test
+  void test3(){
+    SqlSession sqlSession1 = sqlSessionFactory.openSession(true);
+    Mapper mapper1 = sqlSession1.getMapper(Mapper.class);
+    System.out.println(Arrays.toString(mapper1.getUsersXml()));;
+    sqlSession1.commit();
+
+    SqlSession sqlSession2 = sqlSessionFactory.openSession(true);
+    Mapper mapper2 = sqlSession2.getMapper(Mapper.class);
+    System.out.println(Arrays.toString(mapper2.getUsersXml()));;
+
+    // 更新方法的MappedStatement中的flush默认为true，所以下面的查询语句会查询数据库
+    mapper2.updateNameById("kkk", 1);
+    sqlSession2.commit();
+    System.out.println(Arrays.toString(mapper2.getUsersXml()));
 
   }
 

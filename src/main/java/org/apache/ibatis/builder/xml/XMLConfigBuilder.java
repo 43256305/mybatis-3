@@ -107,6 +107,7 @@ public class XMLConfigBuilder extends BaseBuilder {
       propertiesElement(root.evalNode("properties"));
       Properties settings = settingsAsProperties(root.evalNode("settings"));
       loadCustomVfs(settings);
+      // 加载自定义日志实现
       loadCustomLogImpl(settings);
       typeAliasesElement(root.evalNode("typeAliases"));
       pluginElement(root.evalNode("plugins"));
@@ -365,6 +366,7 @@ public class XMLConfigBuilder extends BaseBuilder {
 
   private void mapperElement(XNode parent) throws Exception {
     if (parent != null) {
+      // 遍历mappers中的每一个mapper、package等字标签
       for (XNode child : parent.getChildren()) {
         if ("package".equals(child.getName())) { // 扫描包
           String mapperPackage = child.getStringAttribute("name");

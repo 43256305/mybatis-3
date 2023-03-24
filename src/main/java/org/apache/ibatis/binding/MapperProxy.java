@@ -43,6 +43,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   private static final Method privateLookupInMethod;
   private final SqlSession sqlSession;
   private final Class<T> mapperInterface;
+  // 记录了Mapper中Method对PlainMethodInvoker的映射关系，PlainMethodInvoker中包含了MapperMethod对象
   private final Map<Method, MapperMethodInvoker> methodCache;
 
   public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface, Map<Method, MapperMethodInvoker> methodCache) {
@@ -79,10 +80,14 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // xjh-这里对Mapper接口实行代理逻辑
     try {
+      // 如果调用的是Object中定义的方法，则直接调用
       if (Object.class.equals(method.getDeclaringClass())) {
         return method.invoke(this, args);
       } else {
+        // 核心方法
+        // 先调用cachedInvoker方法生成MapperMethodInvoker对象，再调用此对象的invoke方法
         return cachedInvoker(method).invoke(proxy, method, args, sqlSession);
       }
     } catch (Throwable t) {
@@ -92,8 +97,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
   private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
     try {
+      // 从methodCache中取缓存method，没有取到则调用方法生成，并放置到缓存中
       return MapUtil.computeIfAbsent(methodCache, method, m -> {
-        if (m.isDefault()) {
+        if (m.isDefault()) {  // 判断此方法是否为接口中的default方法
           try {
             if (privateLookupInMethod == null) {
               return new DefaultMethodInvoker(getMethodHandleJava8(method));
@@ -105,6 +111,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
             throw new RuntimeException(e);
           }
         } else {
+          // here
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
       });
@@ -142,6 +149,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+      // xjh-其实就是直接调用了MapperMethod.execute()
       return mapperMethod.execute(sqlSession, args);
     }
   }

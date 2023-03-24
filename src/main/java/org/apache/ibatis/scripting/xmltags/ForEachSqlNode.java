@@ -29,6 +29,7 @@ public class ForEachSqlNode implements SqlNode {
   private final ExpressionEvaluator evaluator;
   // xjh-列表参数名，如idList
   private final String collectionExpression;
+  // 为一个MixedSqlNode，包裹了所有子节点，如果此foreach语句内只写了#{item}，则MixedSqlNode内只包含一个StaticTextSqlNode
   private final SqlNode contents;
   private final String open;
   private final String close;
@@ -83,7 +84,7 @@ public class ForEachSqlNode implements SqlNode {
         applyIndex(context, i, uniqueNumber);
         applyItem(context, o, uniqueNumber);
       }
-      // 遍历子节点（如果没有除了默认子节点之外的其他用户定义子节点的话，就是将#{item}替换成#{__frch_item_0}，调用的是ForEachSqlNode::appendSql方法）
+      // 遍历子节点（如果子节点只有#{item}的话，就是将#{item}替换成#{__frch_item_0}，调用的是ForEachSqlNode::appendSql方法）
       contents.apply(new FilteredDynamicContext(configuration, context, index, item, uniqueNumber));
       if (first) {
         first = !((PrefixedContext) context).isPrefixApplied();
